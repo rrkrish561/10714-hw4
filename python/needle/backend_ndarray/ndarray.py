@@ -246,9 +246,8 @@ class NDArray:
             NDArray : reshaped array; this will point to thep
         """
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        assert prod(self.shape) == prod(new_shape), "Reshape must preserve size"
+        return self.as_strided(new_shape, NDArray.compact_strides(new_shape))
 
     def permute(self, new_axes):
         """
@@ -271,9 +270,11 @@ class NDArray:
             strides changed).
         """
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        assert len(new_axes) == self.ndim, "Permute must have same number of dimensions"
+        new_shape = tuple([self.shape[i] for i in new_axes])
+        new_strides = tuple([self.strides[i] for i in new_axes])
+
+        return self.as_strided(new_shape, new_strides)
 
     def broadcast_to(self, new_shape):
         """
@@ -295,9 +296,14 @@ class NDArray:
             point to the same memory as the original array.
         """
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        new_strides = []
+        for i, (new, old) in enumerate(zip(new_shape, self.shape)):
+            assert new == old or old == 1, "Broadcast dimensions must match"
+            if new == old:
+                new_strides.append(self.strides[i])
+            else:
+                new_strides.append(0)
+        return self.as_strided(new_shape, tuple(new_strides))
 
     ### Get and set elements
 
@@ -362,9 +368,18 @@ class NDArray:
         )
         assert len(idxs) == self.ndim, "Need indexes equal to number of dimensions"
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        new_shape = []
+        new_strides = []
+        new_offset = self._offset
+        for i, s in enumerate(idxs):
+            new_offset += s.start * self.strides[i]
+            new_shape.append(math.ceil((s.stop - s.start) / s.step))
+            new_strides.append(self.strides[i] * s.step)
+
+        new_shape = tuple(new_shape)
+        new_strides = tuple(new_strides)
+
+        return self.make(new_shape, strides=new_strides, device=self.device, handle=self._handle, offset=new_offset)
 
     def __setitem__(self, idxs, other):
         """Set the values of a view into an array, using the same semantics
@@ -633,3 +648,17 @@ def sum(a, axis=None, keepdims=False):
 
 def flip(a, axes):
     return a.flip(axes)
+
+def matmul(a, b):
+    return a @ b
+
+def transpose(a, axes=None):
+    p = list(range(a.ndim))
+    if axes is None:
+        p[-1], p[-2] = p[-2], p[-1]
+    else:
+        p[axes[0]], p[axes[1]] = p[axes[1]], p[axes[0]]
+    return a.permute(p)
+
+def max(a, axis=None, keepdims=False):
+    return a.max(axis=axis, keepdims=keepdims)

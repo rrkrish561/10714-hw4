@@ -1,0 +1,12 @@
+__pycache__/
+build/
+ndarray_backend_cpu.cpython-312-x86_64-linux-gnu.so
+python/needle/backend_ndarray/ndarray_backend_cuda.cpython-312-x86_64-linux-gnu.so
+
+cmake_install.cmake
+CMakeCache.txt
+detect_cuda_compute_capabilities.cpp
+.cache/
+CMakeFiles/
+data/
+.pytest_cache/
