@@ -587,9 +587,16 @@ class NDArray:
         Flip this ndarray along the specified axes.
         Note: compact() before returning.
         """
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        new_offset = self._offset
+        new_strides = list(self._strides)
+
+        for axis in axes:
+            new_offset += (self.shape[axis] - 1) * self.strides[axis]
+            new_strides[axis] = -self.strides[axis]
+
+        out = self.make(self.shape, strides=tuple(new_strides), device=self.device, handle=self._handle, offset=new_offset)
+
+        return out.compact()
 
     def pad(self, axes):
         """
@@ -597,9 +604,13 @@ class NDArray:
         which lists for _all_ axes the left and right padding amount, e.g.,
         axes = ( (0, 0), (1, 1), (0, 0)) pads the middle axis with a 0 on the left and right side.
         """
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        new_shape = tuple([s + pad[0] + pad[1] for s, pad in zip(self.shape, axes)])
+        out = full(new_shape, 0.0, dtype=self.dtype, device=self.device)
+
+        loc = [slice(pad[0], pad[0] + s) for s, pad in zip(self.shape, axes)]
+        out[tuple(loc)] = self
+
+        return out
 
 def array(a, dtype="float32", device=None):
     """Convenience methods to match numpy a bit more closely."""
