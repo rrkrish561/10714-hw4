@@ -179,9 +179,39 @@ def epoch_general_ptb(data, model, seq_len=40, loss_fn=nn.SoftmaxLoss(), opt=Non
         avg_loss: average loss over dataset
     """
     np.random.seed(4)
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+
+    nbatch, batch_size = data.shape
+    
+    if opt is None:
+        model.eval()
+    else:
+        model.train()
+
+    total_loss = 0
+    total_correct = 0
+    total_count = 0
+
+    for i in range(0, nbatch - 1, seq_len):
+        x, y = ndl.data.get_batch(data, i, seq_len, device=device, dtype=dtype)
+        
+        out, _ = model(x)
+        total_count += out.shape[0]
+
+        loss = loss_fn()(out, y)
+        total_loss += loss.numpy().item() * out.shape[0]
+
+        out_numpy = out.numpy()
+        y_numpy = y.numpy()
+
+        total_correct += np.sum(out_numpy.argmax(axis=1) == y_numpy)
+
+        if opt is not None:
+            loss.backward()
+            opt.step()
+    
+    return total_correct / total_count, total_loss / total_count
+    
+        
 
 
 def train_ptb(model, data, seq_len=40, n_epochs=1, optimizer=ndl.optim.SGD,
@@ -206,9 +236,14 @@ def train_ptb(model, data, seq_len=40, n_epochs=1, optimizer=ndl.optim.SGD,
         avg_loss: average loss over dataset from last epoch of training
     """
     np.random.seed(4)
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+
+    opt = optimizer(model.parameters(), lr=lr, weight_decay=weight_decay)
+    
+    for _ in range(n_epochs):
+        avg_acc, avg_loss = epoch_general_ptb(data, model, seq_len=seq_len, loss_fn=loss_fn,
+            opt=opt, clip=clip, device=device, dtype=dtype)
+        
+    return avg_acc, avg_loss
 
 def evaluate_ptb(model, data, seq_len=40, loss_fn=nn.SoftmaxLoss,
         device=None, dtype="float32"):
@@ -226,9 +261,11 @@ def evaluate_ptb(model, data, seq_len=40, loss_fn=nn.SoftmaxLoss,
         avg_loss: average loss over dataset
     """
     np.random.seed(4)
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    
+    avg_acc, avg_loss = epoch_general_ptb(data, model, seq_len=seq_len, loss_fn=loss_fn,
+        device=device, dtype=dtype)
+    
+    return avg_acc, avg_loss
 
 ### CODE BELOW IS FOR ILLUSTRATION, YOU DO NOT NEED TO EDIT
 
